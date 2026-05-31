@@ -1,0 +1,193 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: 4xui-postgres
+    environment:
+      POSTGRES_DB: 4xui
+      POSTGRES_USER: 4xui
+      POSTGRES_PASSWORD: 4xui_secure_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U 4xui -d 4xui"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - 4xui-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: 4xui-redis
+    command: redis-server --appendonly yes --requirepass 4xui_redis_password
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - 4xui-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.gateway
+    container_name: 4xui-gateway
+    environment:
+      - PORT=8080
+      - GRPC_PORT=8081
+      - USER_SERVICE_URL=user-service:5001
+      - NODE_SERVICE_URL=node-service:5002
+      - STATS_SERVICE_URL=stats-service:5003
+      - NOTIFY_SERVICE_URL=notify-service:5004
+      - REDIS_URL=redis://:4xui_redis_password@redis:6379
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - 4xui-network
+
+  # User Service
+  user-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.service
+    container_name: 4xui-user-service
+    command: ./user-service
+    environment:
+      - SERVICE_PORT=5001
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=4xui
+      - DB_PASSWORD=4xui_secure_password
+      - DB_NAME=4xui
+      - REDIS_URL=redis://:4xui_redis_password@redis:6379
+      - JWT_SECRET=your_jwt_secret_key_change_in_production
+      - JWT_EXPIRY=15m
+      - REFRESH_TOKEN_EXPIRY=168h
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - 4xui-network
+
+  # Node Service
+  node-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.service
+    container_name: 4xui-node-service
+    command: ./node-service
+    environment:
+      - SERVICE_PORT=5002
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=4xui
+      - DB_PASSWORD=4xui_secure_password
+      - DB_NAME=4xui
+      - REDIS_URL=redis://:4xui_redis_password@redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - 4xui-network
+
+  # Stats Service
+  stats-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.service
+    container_name: 4xui-stats-service
+    command: ./stats-service
+    environment:
+      - SERVICE_PORT=5003
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=4xui
+      - DB_PASSWORD=4xui_secure_password
+      - DB_NAME=4xui
+      - REDIS_URL=redis://:4xui_redis_password@redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - 4xui-network
+
+  # Notify Service
+  notify-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.service
+    container_name: 4xui-notify-service
+    command: ./notify-service
+    environment:
+      - SERVICE_PORT=5004
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=4xui
+      - DB_PASSWORD=4xui_secure_password
+      - DB_NAME=4xui
+      - REDIS_URL=redis://:4xui_redis_password@redis:6379
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - 4xui-network
+
+  # Frontend (Production)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: 4xui-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+    networks:
+      - 4xui-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  4xui-network:
+    driver: bridge

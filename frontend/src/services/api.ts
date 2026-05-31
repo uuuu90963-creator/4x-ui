@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ApiResponse, PaginatedResponse, User, Server, Inbound, Client, Subscription, ServerStats, LoginCredentials, AuthTokens, PanelSettings, Alert } from '../types';
+import type { ApiResponse, PaginatedResponse, User, Server, Inbound, Client, Subscription, SubscriptionPlan, ServerStats, LoginCredentials, AuthTokens, PanelSettings, Alert } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 

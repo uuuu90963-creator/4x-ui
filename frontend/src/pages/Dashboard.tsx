@@ -1,26 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
-  Server, 
+  Server as ServerIcon, 
   Users, 
   Activity, 
-  TrendingUp, 
-  TrendingDown,
+  TrendingUp,
   ArrowUpRight,
-  ArrowDownRight,
-  Wifi,
-  WifiOff,
-  Clock,
-  AlertCircle
+  Clock, 
+  AlertCircle,
+  Wifi
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { cn, formatBytes, getStatusColor, getStatusBgColor } from '../../lib/utils';
-import { useAppStore } from '../../stores/appStore';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { cn, formatBytes, getStatusBgColor } from '../lib/utils';
+import { useAppStore } from '../stores/appStore';
 
 // Mock data for demo
 const mockServers = [
-  { id: '1', name: 'US Server 1', host: 'us1.example.com', status: 'online' as const, cpuUsage: 45, memoryUsage: 62, bandwidthIn: 1024000000, bandwidthOut: 2048000000 },
-  { id: '2', name: 'EU Server 1', host: 'eu1.example.com', status: 'degraded' as const, cpuUsage: 78, memoryUsage: 85, bandwidthIn: 512000000, bandwidthOut: 1024000000 },
-  { id: '3', name: 'Asia Server 1', host: 'asia1.example.com', status: 'online' as const, cpuUsage: 23, memoryUsage: 41, bandwidthIn: 2048000000, bandwidthOut: 4096000000 },
+  { id: '1', name: 'US Server 1', host: 'us1.example.com', port: 22, status: 'online' as const, cpuUsage: 45, memoryUsage: 62, bandwidthIn: 1024000000, bandwidthOut: 2048000000, lastHealthCheck: null, createdAt: '', updatedAt: '' },
+  { id: '2', name: 'EU Server 1', host: 'eu1.example.com', port: 22, status: 'degraded' as const, cpuUsage: 78, memoryUsage: 85, bandwidthIn: 512000000, bandwidthOut: 1024000000, lastHealthCheck: null, createdAt: '', updatedAt: '' },
+  { id: '3', name: 'Asia Server 1', host: 'asia1.example.com', port: 22, status: 'online' as const, cpuUsage: 23, memoryUsage: 41, bandwidthIn: 2048000000, bandwidthOut: 4096000000, lastHealthCheck: null, createdAt: '', updatedAt: '' },
 ];
 
 const mockTrafficData = [
@@ -43,15 +40,8 @@ const mockStats = {
 };
 
 export default function Dashboard() {
-  const { servers, setServers } = useAppStore();
+  const {} = useAppStore();
   const [trafficPeriod, setTrafficPeriod] = useState<'day' | 'week' | 'month'>('day');
-
-  useEffect(() => {
-    // Simulate loading servers
-    if (servers.length === 0) {
-      setServers(mockServers);
-    }
-  }, []);
 
   const activeServers = mockServers.filter(s => s.status === 'online').length;
   const totalCpu = mockServers.reduce((acc, s) => acc + s.cpuUsage, 0) / mockServers.length;
@@ -69,7 +59,6 @@ export default function Dashboard() {
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Servers */}
         <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -77,7 +66,7 @@ export default function Dashboard() {
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{mockStats.totalServers}</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-              <Server className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <ServerIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
           <div className="mt-4 flex items-center gap-2">
@@ -90,7 +79,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Total Users */}
         <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -112,7 +100,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Total Bandwidth */}
         <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -133,7 +120,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Traffic Used */}
         <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -156,7 +142,6 @@ export default function Dashboard() {
 
       {/* Charts and servers */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Traffic chart */}
         <div className="lg:col-span-2 card">
           <div className="card-header flex items-center justify-between">
             <h3 className="font-semibold text-gray-900 dark:text-white">Traffic Overview</h3>
@@ -193,7 +178,7 @@ export default function Dashboard() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-dark-300" />
                   <XAxis dataKey="time" className="text-xs" tick={{ fill: '#9ca3af' }} />
-                  <YAxis className="text-xs" tick={{ fill: '#9ca3af' }} tickFormatter={(v) => `${v}GB`} />
+                  <YAxis className="text-xs" tick={{ fill: '#9ca3af' }} tickFormatter={(v: number) => `${v}GB`} />
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: '#1e293b', 
@@ -225,13 +210,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* System health */}
         <div className="card">
           <div className="card-header">
             <h3 className="font-semibold text-gray-900 dark:text-white">System Health</h3>
           </div>
           <div className="card-body space-y-6">
-            {/* CPU */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-500 dark:text-gray-400">CPU Usage</span>
@@ -248,7 +231,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Memory */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-500 dark:text-gray-400">Memory Usage</span>
@@ -265,7 +247,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Uptime */}
             <div className="pt-4 border-t border-gray-100 dark:border-dark-300">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center">

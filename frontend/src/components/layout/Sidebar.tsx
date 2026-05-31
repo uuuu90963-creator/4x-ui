@@ -8,11 +8,10 @@ import {
   CreditCard,
   Bell,
   Shield,
-  ChevronLeft,
-  ChevronRight,
   LogOut,
   X
 } from 'lucide-react';
+import { useAppStore } from '../../stores/appStore';
 import { cn } from '../../lib/utils';
 
 interface SidebarProps {
@@ -32,7 +31,7 @@ const navItems = [
 ];
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
-  const { theme } = require('../../stores/appStore').useAppStore();
+  const {} = useAppStore();
 
   return (
     <>

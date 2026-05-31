@@ -3,20 +3,14 @@ import {
   Server, 
   Plus, 
   Search, 
-  MoreVertical, 
   Edit2, 
   Trash2, 
   RefreshCw,
   CheckCircle,
   XCircle,
-  AlertTriangle,
-  Activity,
-  Eye,
-  EyeOff,
-  Copy,
-  Shield
+  AlertTriangle
 } from 'lucide-react';
-import { cn, formatBytes, getStatusColor, getStatusBgColor, copyToClipboard } from '../../lib/utils';
+import { cn, formatBytes, getStatusBgColor } from '../lib/utils';
 
 // Mock data
 const mockServers = [
@@ -31,7 +25,6 @@ export default function Servers() {
   const [servers, setServers] = useState(mockServers);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedServer, setSelectedServer] = useState<string | null>(null);
 
   const filteredServers = servers.filter(s => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

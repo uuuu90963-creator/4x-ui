@@ -1,3 +1,5 @@
+export type Theme = 'light' | 'dark' | 'auto';
+
 // User types
 export interface User {
   id: string;
